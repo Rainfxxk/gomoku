@@ -38,7 +38,7 @@ public:
     void draw_border(const char** border_string = nullptr);
     virtual void draw();
     void add(tui_widght* child);
-    void print_structure(int indent = 0);
+    virtual void print_structure(int indent = 0);
 };
 
 class tui_layout : public tui_widght {
@@ -70,7 +70,7 @@ public:
     int get_current_index() const;
     tui_widght* get_current_widget() const;
     void draw() override;
-    void print_structure(int indent = 0);
+    void print_structure(int indent = 0) override;
 
 private:
     std::vector<tui_widght*> widgets; // 存储子窗口
@@ -103,4 +103,5 @@ public:
     void draw() override;
 private:
     std::string text;
+    int old_length;
 };

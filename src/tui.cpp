@@ -91,7 +91,6 @@ tui_widght::tui_widght(int pos_x, int pos_y, int width, int height, bool is_bord
 
 tui_widght::~tui_widght() {
     // Cleanup children if necessary
-    printf("Destroying widget: %s\n", name.c_str());
     if (this->next) {
         delete this->next;
         this->next = nullptr;
@@ -196,6 +195,7 @@ tui_layout::~tui_layout() {
 }
 
 void tui_layout::add(tui_widght* child) {
+    child->parent = this;
     if (children == nullptr) {
         children = child;
         child->parent = this;
@@ -210,37 +210,27 @@ void tui_layout::add(tui_widght* child) {
     }
     else {
         tui_widght* current = children;
-        int pos;
-        int size;
+        int pos_x = this->pos_x;
+        int pos_y = this->pos_y;
         while (current) {
-            if (layout_type == LAYOUT_HORIZONTAL) {
-                pos = current->pos_x + current->width;
-                size = current->height;
-            } else if (layout_type == LAYOUT_VERTICAL) {
-                pos = current->pos_y + current->height;
-                size = current->width;
-            }
-
-            if (!current->next) {
+            pos_x += current->width;
+            pos_y += current->height;
+            if (current->next == nullptr) {
                 current->next = child;
                 break;
             }
             current = current->next;
         }
         
-        child->parent = this;
         if (layout_type == LAYOUT_HORIZONTAL) {
-            child->pos_x = pos;
+            child->pos_x = pos_x;
             child->pos_y = this->pos_y;
             child->height = this->height;
-            child->width = size;
         } else if (layout_type == LAYOUT_VERTICAL) {
-            child->pos_y = pos;
             child->pos_x = this->pos_x;
+            child->pos_y = pos_y;
             child->width = this->width;
-            child->height = size;
         }
-        
     }
     
 }
@@ -348,9 +338,6 @@ void tui_stack_widget::print_structure(int indent) {
     printf("Stack Widget: %s, Pos: (%d, %d), Size: (%d, %d), Bordered: %s, Current Index: %d\n",
            name.c_str(), pos_x, pos_y, width, height, is_bordered ? "Yes" : "No", current_index);
     for (size_t i = 0; i < widgets.size(); ++i) {
-        for (int j = 0; j < indent + 1; ++j) {
-            printf("  ");
-        }
         widgets[i]->print_structure(indent + 2);
     }
 }
@@ -417,13 +404,14 @@ void tui_selector::draw() {
 }
 
 tui_label::tui_label(int pos_x, int pos_y, int width, int height, std::string name, const std::string& text)
-    : tui_widght(pos_x, pos_y, width, height, false, name), text(text) {}
+    : tui_widght(pos_x, pos_y, width, height, false, name), text(text), old_length(0) {}
 
 tui_label::~tui_label() {
     // 默认析构函数
 }
 
 void tui_label::set_text(const std::string& text) {
+    old_length = this->text.length();
     this->text = text;
 }
 
@@ -432,17 +420,21 @@ std::string tui_label::get_text() const {
 }
 
 void tui_label::erase_text() {
-    int text_x = pos_x + (width - text.length()) / 2;
+    int text_x = pos_x + (width - old_length) / 2;
     int text_y = pos_y + height / 2;
 
     move_cursor(text_x, text_y);
-    for (int i = 0; i < text.size(); ++i) {
+    for (int i = 0; i < old_length; ++i) {
         printf(" ");
     }
     fflush(stdout);
 }
 
 void tui_label::draw() {
+    if (old_length != 0 ) {
+        erase_text();
+        old_length = 0;
+    }
     // 计算文本的起始位置以实现居中显示
     int text_x = pos_x + (width - text.length()) / 2;
     int text_y = pos_y + height / 2;
@@ -450,4 +442,5 @@ void tui_label::draw() {
     move_cursor(text_x, text_y);
     // 根据width限制文本长度
     printf("%.*s", width, text.c_str());
+    fflush(stdout);
 }

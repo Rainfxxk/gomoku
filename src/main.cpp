@@ -27,6 +27,9 @@ public:
     tui_widght* right_panel;
     tui_layout* right_layout;
     tui_label* status_label;
+    tui_label* move_label;
+    tui_label* put_label;
+    tui_label* quit_label;
     int time;
     tui_label* time_label;
     timer game_timer;
@@ -51,11 +54,17 @@ public:
         layout->add(chessboard, 70); // 30% width
         layout->add(right_panel, 30); // 70% width
         right_panel->add(right_layout);
-        status_label = new tui_label(0, 0, right_panel->width - 2, 3, "status_label", "Status: ");
-        time_label = new tui_label(0, 0, right_panel->width - 2, 3, "time_label", "");
-        time = 15;
+        status_label = new tui_label(0, 0, right_panel->width - 2, 1, "status_label", "Status: ");
+        time_label = new tui_label(0, 0, right_panel->width - 2, 1, "time_label", "");
+        move_label = new tui_label(0, 0, right_panel->width - 2, 1, "move_label", "h/j/k/l to move preview");
+        put_label = new tui_label(0, 0, right_panel->width - 2, 1, "put_label", "<Enter> to place piece");
+        quit_label = new tui_label(0, 0, right_panel->width - 2, 1, "quit_label", "q to quit to main menu");
         right_layout->add(status_label);
-        right_layout->add(time_label);
+        right_layout->add(time_label, 25);
+        right_layout->add(move_label, 25);
+        right_layout->add(put_label, 25);
+        right_layout->add(quit_label, 25);
+        time = 15;
     }
 
     ~main_window() {}
@@ -136,36 +145,47 @@ public:
         }
     }
 
-    void ai() {
-        // AI move logic
+    std::pair<int, int> ai() {
+        std::pair<int, int> move = chessboard->game->get_ai_move();
+        chessboard->game->put_chess_piece(move.first, move.second, chess::WHITE);
+        return move;
+    }
+
+    bool is_game_over(int row, int col) {
+        if (chessboard->current_turn == chess::BLACK && chessboard->game->check_ban(row, col)) {
+            current_state = STATE_GAME_OVER;
+            status_label->set_text("White Wins! Black made a banned move.");
+            return true;
+        }
+        if (chessboard->game->check_win(row, col)) {
+            current_state = STATE_GAME_OVER;
+            status_label->set_text("" + std::string( chessboard->current_turn == chess::BLACK ? "Black" : "White") + " Wins!");
+            return true;
+        }
+        if (chessboard->game->check_full()) {
+            current_state = STATE_GAME_OVER;
+            status_label->set_text("Draw! The board is full.");
+            return true;
+        }
+
+        return false;
     }
 
     void put_chess_piece(bool is_ai = false) {
         if (chessboard->game->is_ocupied(chessboard->preview_y, chessboard->preview_x) == false) {
             chessboard->game->put_chess_piece(chessboard->preview_y, chessboard->preview_x, chessboard->current_turn);
             timer_stop();
-            if (chessboard->current_turn == chess::BLACK && chessboard->game->check_ban(chessboard->preview_y, chessboard->preview_x)) {
-                current_state = STATE_GAME_OVER;
-                status_label->set_text("White Wins! Black made a banned move.");
-                return;
-            }
-            if (chessboard->game->check_win(chessboard->preview_y, chessboard->preview_x)) {
-                current_state = STATE_GAME_OVER;
-                status_label->set_text("" + std::string( chessboard->current_turn == chess::BLACK ? "Black" : "White") + " Wins!");
-                return;
-            }
-            if (chessboard->game->check_full()) {
-                current_state = STATE_GAME_OVER;
-                status_label->set_text("Draw! The board is full.");
-                return;
-            }
+            if (is_game_over(chessboard->preview_y, chessboard->preview_x)) return;
             if (is_ai) {
-                ai();
-            }
-            else {
+                status_label->set_text("AI's Turn");
+                chessboard->draw();
+                status_label->draw();
                 chessboard->current_turn = (chessboard->current_turn == chess::BLACK) ? chess::WHITE : chess::BLACK;
-                status_label->set_text( chessboard->current_turn == chess::BLACK ? "Black's Turn" : "White's Turn");
+                std::pair<int, int> move = ai();
+                if (is_game_over(move.first, move.second)) return;
             }
+            chessboard->current_turn = (chessboard->current_turn == chess::BLACK) ? chess::WHITE : chess::BLACK;
+            status_label->set_text( chessboard->current_turn == chess::BLACK ? "Black's Turn" : "White's Turn");
             timer_start();
         }
     }
@@ -277,6 +297,7 @@ int main() {
     struct winsize w;
     assert(ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) != -1);
     main_window *window= new main_window(0, 0, w.ws_col, w.ws_row, false, "main_window");
+    // window->print_structure();
     window->run();
     // getchar();
     delete window;

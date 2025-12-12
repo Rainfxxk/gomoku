@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -Wall -Wextra -std=c++20
+CXXFLAGS = -Wall -Wextra -std=c++20 -g
 
 SRCS = $(wildcard src/*.cpp)
 HEADERS = $(wildcard src/*.h)

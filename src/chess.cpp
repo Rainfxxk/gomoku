@@ -1,3 +1,5 @@
+#include <vector>
+#include <limits>
 #include "chess.h"
 
 chess::chess(int row, int col) {
@@ -112,6 +114,160 @@ bool chess::check_win(int r, int c) {
 
 bool chess::check_full() {
     return count >= row * col;
+}
+
+int chess::calcute_score(int r, int c, int delta_row, int delta_col) {
+    chess_piece piece = board[r][c];
+    if (piece == EMPTY) return 0;
+
+    int count = 1;
+    int empty_count = 0;
+
+    // 向正方向计数
+    int nr = r + delta_row;
+    int nc = c + delta_col;
+    while (nr >= 0 && nr < row && nc >= 0 && nc < col && board[nr][nc] == piece) {
+        count++;
+        nr += delta_row;
+        nc += delta_col;
+    }
+    if (nr >= 0 && nr < row && nc >= 0 && nc < col && board[nr][nc] == EMPTY) {
+        empty_count++;
+    }
+
+    // 向反方向计数
+    nr = r - delta_row;
+    nc = c - delta_col;
+    while (nr >= 0 && nr < row && nc >= 0 && nc < col && board[nr][nc] == piece) {
+        count++;
+        nr -= delta_row;
+        nc -= delta_col;
+    }
+    if (nr >= 0 && nr < row && nc >= 0 && nc < col && board[nr][nc] == EMPTY) {
+        empty_count++;
+    }
+
+    if (count > 4) {
+        return 1000000;
+    } else if (count == 4 && empty_count >= 2) {
+        return 100000; // 活四
+    } else if (count == 3 && empty_count >= 2) {
+        return 20000; // 活三
+    } else if (count == 4 && empty_count == 1) {
+        return 10000; // 冲四
+    } else if (count == 3 && empty_count == 1) {
+        return 5000; // 冲三
+    } else if (count == 2 && empty_count >= 2) {
+        return 1000; // 活二
+    } else if (count == 1 && empty_count >= 2) {
+        // return 1000;
+        // 增加中心位置及其周围的权重
+        if (r == row / 2 && c == col / 2) {
+            return 1000; // 中心位置的权重
+        } else if (abs(r - row / 2) <= 1 && abs(c - col / 2) <= 1) {
+            return 800; // 中心位置周围的权重
+        } else {
+            return 500; // 其他位置的权重
+        }
+    } else {
+        return 0;
+    }
+}
+
+int chess::evaluate_board() {
+    int player_score = 0;
+    int ai_score = 0;
+
+    std::vector<std::pair<int, int>> directions = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
+
+    for (int i = 0; i < row; ++i) {
+        for (int j = 0; j < col; ++j) {
+            if (board[i][j] == BLACK) {
+                for (auto& dir : directions) {
+                    player_score += calcute_score(i, j, dir.first, dir.second);
+                }
+            } else if (board[i][j] == WHITE) {
+                for (auto& dir : directions) {
+                    ai_score += calcute_score(i, j, dir.first, dir.second);
+                }
+            }
+        }
+    }
+
+    return ai_score - player_score;
+}
+
+std::pair<int, std::pair<int, int>> chess::minimax(int depth, bool is_maximizing, int alpha, int beta) {
+    if (depth == 0) {
+        return {evaluate_board(), {-1, -1}};
+    }
+
+    if (is_maximizing) {
+        int best_score = std::numeric_limits<int>::min();
+        std::pair<int, int> best_move = {-1, -1};
+
+        for (int i = 0; i < row; ++i) {
+            for (int j = 0; j < col; ++j) {
+                if (board[i][j] == EMPTY) {
+                    board[i][j] = WHITE;
+                    std::pair<int, std::pair<int, int>> result = minimax(depth - 1, false, alpha, beta);
+                    board[i][j] = EMPTY;
+
+                    if (result.first > best_score) {
+                        best_score = result.first;
+                        best_move = {i, j};
+                    }
+
+                    alpha = std::max(alpha, best_score);
+                    if (beta <= alpha) {
+                        break;
+                    }
+                }
+            }
+            if (beta <= alpha) {
+                break;
+            }
+        }
+
+        return {best_score, best_move};
+    } else {
+        int best_score = std::numeric_limits<int>::max();
+        std::pair<int, int> best_move = {-1, -1};
+
+        for (int i = 0; i < row; ++i) {
+            for (int j = 0; j < col; ++j) {
+                if (board[i][j] == EMPTY) {
+                    board[i][j] = BLACK;
+                    std::pair<int, std::pair<int, int>> result = minimax(depth - 1, true, alpha, beta);
+                    board[i][j] = EMPTY;
+
+                    if (result.first < best_score) {
+                        best_score = result.first;
+                        best_move = {i, j};
+                    }
+
+                    beta = std::min(beta, best_score);
+                    if (beta <= alpha) {
+                        break;
+                    }
+                }
+            }
+            if (beta <= alpha) {
+                break;
+            }
+        }
+
+        return {best_score, best_move};
+    }
+}
+
+std::pair<int, int> chess::get_ai_move(int depth) {
+    if (count == 0) {
+        // 如果棋盘为空，优先选择中心位置
+        return {row / 2, col / 2};
+    }
+
+    return minimax(depth, true, std::numeric_limits<int>::min(), std::numeric_limits<int>::max()).second;
 }
 
 chessboard_widght::chessboard_widght(int row, int col, std::string name)
