@@ -2,6 +2,14 @@
 
 This is a tui version gomoku game which support two player game mode and ai game mode.
 
+## Install
+Only support linux, you can enjoy the game by run this command:
+
+```sh
+git clone https://github.com/Rainfxxk/gomoku.git
+make
+```
+
 And the tui framework I used is one that I implemented myself. I hope that in the future I will have the chance to improve this framework and make it an independent project.
 
 ![start.png](https://github.com/Rainfxxk/gomoku/blob/main/img/start.png?raw=true)
