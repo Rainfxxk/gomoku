@@ -2,9 +2,10 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "tui.h"
 #include <termios.h>
 #include <unistd.h>
+#include <math.h>
+#include "tui.h"
 
 // 保存终端原始设置
 struct termios original_settings;
@@ -251,13 +252,13 @@ void tui_layout::add(tui_widght* child, int radio) {
     }
     if (layout_type == LAYOUT_HORIZONTAL) {
         // Adjust child width based on radio
-        child->width = (this->width * radio) / 100;
+        child->width = floor((this->width * radio) / 100.0 + 0.5);
         child->height = this->height;
         child->pos_x = cur_x;
         child->pos_y = this->pos_y;
     } else if (layout_type == LAYOUT_VERTICAL) {
         // Adjust child height based on radio
-        child->height = (this->height * radio) / 100;
+        child->height = floor((this->height * radio) / 100.0 + 0.5);
         child->width = this->width;
         child->pos_x = this->pos_x;
         child->pos_y = cur_y;

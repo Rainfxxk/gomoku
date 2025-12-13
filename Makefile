@@ -9,8 +9,11 @@ TARGET = build/gomoku
 all: $(TARGET)
 	@./$(TARGET)
 
+build:
+	@mkdir -p $@
+
 # 链接目标文件生成可执行文件
-$(TARGET): $(OBJS)
+$(TARGET): $(OBJS) | build
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 # 编译 .cpp 文件生成 .o 文件
@@ -22,4 +25,4 @@ $(TARGET): $(OBJS)
 
 clean:
 	rm -f $(OBJS)
-	rm -f gomoku
+	rm -f $(TARGET)
