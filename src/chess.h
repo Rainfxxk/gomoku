@@ -11,7 +11,7 @@ public:
         WHITE = 2
     };
 
-private:
+public:
     chess_piece **board;
     int count;
 
@@ -31,6 +31,7 @@ public:
     bool is_ocupied(int row, int col);
     bool put_chess_piece(int row, int col, chess_piece piece);
     int count_piece(int row, int col, int delta_row, int delta_col);
+    int count_alive_n(int r, int c, int delta_row, int delta_col, int n);
     bool check_alive_three(int row, int col);
     bool check_alive_four(int row, int col);
     int check_ban(int row, int col);

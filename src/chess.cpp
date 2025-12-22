@@ -75,23 +75,75 @@ int chess::count_piece(int r, int c, int delta_row, int delta_col) {
     return count;
 }
 
+int chess::count_alive_n(int r, int c, int delta_row, int delta_col, int n) {
+    chess_piece piece = board[r][c];
+    if (piece == EMPTY) return 0;
+
+    int count = 1;
+    bool meet_empty = false;
+
+    // 向正方向计数
+    int nr = r + delta_row;
+    int nc = c + delta_col;
+    while (nr >= 0 && nr < row && nc >= 0 && nc < col) {
+        chess_piece cur_piece = board[nr][nc];
+        if (cur_piece == piece) {
+            count++;
+            nr += delta_row;
+            nc += delta_col;
+        }
+        else if (cur_piece == EMPTY) {
+            if (meet_empty) break;
+            nr += delta_row;
+            nc += delta_col;
+            meet_empty = true;
+        }
+        else {
+            break;
+        }
+    }
+
+    // 向反方向计数
+    nr = r - delta_row;
+    nc = c - delta_col;
+    while (nr >= 0 && nr < row && nc >= 0 && nc < col && board[nr][nc] == piece) {
+        chess_piece cur_piece = board[nr][nc];
+        if (cur_piece == piece) {
+            count++;
+            nr -= delta_row;
+            nc -= delta_col;
+        }
+        else if (cur_piece == EMPTY) {
+            if (meet_empty) break;
+            nr -= delta_row;
+            nc -= delta_col;
+            meet_empty = true;
+        }
+        else {
+            break;
+        }
+    }
+
+    return count == n;
+}
+
 bool chess::check_alive_three(int r, int c) {
     // Implementation to check for alive three
     int count = 0;
-    if (count_piece(r, c, 0, 1) == 3) count++; // Horizontal
-    if (count_piece(r, c, 1, 0) == 3) count++; // Vertical
-    if (count_piece(r, c, 1, 1) == 3) count++; // Diagonal 
-    if (count_piece(r, c, 1, -1) == 3) count++; // Diagonal /  
+    if (count_alive_n(r, c, 0, 1, 3)) count++; // Horizontal
+    if (count_alive_n(r, c, 1, 0, 3)) count++; // Vertical
+    if (count_alive_n(r, c, 1, 1, 3)) count++; // Diagonal 
+    if (count_alive_n(r, c, 1, -1, 3)) count++; // Diagonal /  
     return count > 1; // Placeholder
 }
 
 bool chess::check_alive_four(int r, int c) {
     // Implementation to check for alive four
     int count = 0;
-    if (count_piece(r, c, 0, 1) == 4) count++; // Horizontal
-    if (count_piece(r, c, 1, 0) == 4) count++; // Vertical
-    if (count_piece(r, c, 1, 1) == 4) count++; // Diagonal 
-    if (count_piece(r, c, 1, -1) == 4) count++; // Diagonal /  
+    if (count_alive_n(r, c, 0, 1, 4)) count++; // Horizontal
+    if (count_alive_n(r, c, 1, 0, 4)) count++; // Vertical
+    if (count_alive_n(r, c, 1, 1, 4)) count++; // Diagonal 
+    if (count_alive_n(r, c, 1, -1, 4)) count++; // Diagonal /  
     return count > 1; // Placeholder
 }
 
